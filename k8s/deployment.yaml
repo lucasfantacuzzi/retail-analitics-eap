@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: retail-analytics
+  labels:
+    app: retail-analytics
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: retail-analytics
+  template:
+    metadata:
+      labels:
+        app: retail-analytics
+    spec:
+      containers:
+        - name: retail-analytics
+          # Registry interno do OpenShift (ajuste o namespace se não for jenkins)
+          image: image-registry.openshift-image-registry.svc.cluster.local:5000/jenkins/retail-analytics:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /retail-analytics/api/sales/health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /retail-analytics/api/sales/health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
