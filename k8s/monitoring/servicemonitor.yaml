@@ -10,6 +10,6 @@ spec:
     matchLabels:
       app: retail-analytics
   endpoints:
-    - port: http
+    - port: metrics
       path: /metrics
       interval: 30s

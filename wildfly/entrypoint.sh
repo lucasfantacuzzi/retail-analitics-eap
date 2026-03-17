@@ -21,14 +21,6 @@ CLI_FILE="$(mktemp)"
 cat > "${CLI_FILE}" <<EOF
 embed-server --std-out=echo --server-config=standalone.xml
 
-if (outcome != success) of /extension=org.wildfly.extension.microprofile.metrics-smallrye:read-resource
-  /extension=org.wildfly.extension.microprofile.metrics-smallrye:add
-end-if
-
-if (outcome != success) of /subsystem=microprofile-metrics-smallrye:read-resource
-  /subsystem=microprofile-metrics-smallrye:add
-end-if
-
 if (outcome != success) of /subsystem=datasources/jdbc-driver=postgresql:read-resource
   /subsystem=datasources/jdbc-driver=postgresql:add(driver-name=postgresql,driver-module-name=org.postgresql,driver-class-name=org.postgresql.Driver)
 end-if
