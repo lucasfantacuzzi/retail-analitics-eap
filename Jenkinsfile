@@ -52,6 +52,9 @@ spec:
         }
 
         stage('Deploy to OpenShift') {
+            options {
+                timeout(time: 20, unit: 'MINUTES')
+            }
             steps {
                 container('oc') {
                     sh """
@@ -65,7 +68,9 @@ spec:
 
                         # Faz deploy de uma versão específica (tag numerada), sem depender de :latest
                         oc set image deployment/${env.APP_NAME} ${env.APP_NAME}=${env.REGISTRY}/${env.NAMESPACE}/${env.APP_NAME}:${env.VERSION_TAG} -n ${env.NAMESPACE} --record
-                        oc rollout status deployment/${env.APP_NAME} -n ${env.NAMESPACE} --timeout=180s
+
+                        # Sem timeout do oc (para debugar). Jenkins corta em 20min (stage timeout).
+                        oc rollout status deployment/${env.APP_NAME} -n ${env.NAMESPACE}
                     """
                 }
             }
