@@ -24,8 +24,7 @@ RUN mv /tmp/postgresql.jar ${JBOSS_HOME}/modules/system/layers/base/org/postgres
 COPY --from=build /build/target/retail-analytics.war ${JBOSS_HOME}/standalone/deployments/retail-analytics.war
 
 COPY wildfly/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
 
 EXPOSE 8080 9990
 
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["sh", "/entrypoint.sh"]
