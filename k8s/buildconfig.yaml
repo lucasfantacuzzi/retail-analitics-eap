@@ -11,6 +11,8 @@ metadata:
   namespace: application
 spec:
   runPolicy: Serial
+  successfulBuildsHistoryLimit: 2
+  failedBuildsHistoryLimit: 2
   source:
     type: Binary
     binary: {}
