@@ -1,0 +1,42 @@
+# jenkins-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jenkins
+  namespace: jenkins
+  labels:
+    app: jenkins-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jenkins-app
+  template:
+    metadata:
+      labels:
+        app: jenkins-app
+    spec:
+      containers:
+        - name: jenkins
+          image: jenkins/jenkins:jdk21
+          ports:
+            - containerPort: 8080
+            - containerPort: 50000
+          env:
+            # Diretório de trabalho dos agentes Kubernetes (evita AccessDeniedException no OpenShift)
+            - name: JAVA_OPTS
+              value: "-Dorg.csanchez.jenkins.plugins.kubernetes.PodTemplateBuilder.defaultHome=/tmp/agent"
+          volumeMounts:
+            - name: jenkins-home
+              mountPath: /var/jenkins_home
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1"
+              memory: "2Gi"
+      volumes:
+        - name: jenkins-home
+          persistentVolumeClaim:
+            claimName: jenkins-home
