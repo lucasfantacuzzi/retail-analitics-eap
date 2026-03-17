@@ -16,6 +16,7 @@ spec:
       labels:
         app: retail-analytics
     spec:
+      terminationGracePeriodSeconds: 10
       containers:
         - name: retail-analytics
           image: image-registry.openshift-image-registry.svc.cluster.local:5000/application/retail-analytics:latest
@@ -23,6 +24,10 @@ spec:
           ports:
             - containerPort: 8080
             - containerPort: 9990
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 3"]
           resources:
             requests:
               cpu: "100m"
