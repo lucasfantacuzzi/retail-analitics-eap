@@ -11,5 +11,5 @@ spec:
       app: retail-analytics
   endpoints:
     - port: metrics
-      path: /metrics
+      path: /metrics/
       interval: 30s
