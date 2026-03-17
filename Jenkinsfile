@@ -1,11 +1,27 @@
 pipeline {
-    agent any
+    agent {
+        kubernetes {
+            defaultContainer 'oc'
+            workspaceVolume emptyDirWorkspaceVolume()
+            yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  serviceAccountName: default
+  securityContext:
+    runAsUser: 0
+  containers:
+  - name: oc
+    image: quay.io/openshift/origin-cli:4.15
+    command: ['cat']
+    tty: true
+"""
+        }
+    }
 
     environment {
         APP_NAME     = "retail-analytics"
-        REGISTRY     = "image-registry.openshift-image-registry.svc.cluster.local:5000"
         NAMESPACE    = "application"
-        IMAGE_TAG    = "${REGISTRY}/${NAMESPACE}/${APP_NAME}:${env.BUILD_NUMBER ?: 'latest'}"
     }
 
     stages {
@@ -15,81 +31,19 @@ pipeline {
             }
         }
 
-        stage('Build WAR with Maven') {
-            agent {
-                kubernetes {
-                    defaultContainer 'maven'
-                    workspaceVolume emptyDirWorkspaceVolume()
-                    yaml """
-apiVersion: v1
-kind: Pod
-spec:
-  securityContext:
-    runAsUser: 0
-  containers:
-  - name: maven
-    image: maven:3.9-eclipse-temurin-11
-    command: ['cat']
-    tty: true
-"""
-                }
-            }
+        stage('Build and Push Image (OpenShift BuildConfig)') {
             steps {
-                container('maven') {
-                    sh 'mvn -q -e clean package'
-                    stash name: 'build-context', includes: 'Dockerfile,pom.xml,wildfly/**,src/**'
-                }
-            }
-        }
-
-        stage('Build and Push Image') {
-            agent {
-                kubernetes {
-                    defaultContainer 'kaniko'
-                    workspaceVolume emptyDirWorkspaceVolume()
-                    yaml """
-apiVersion: v1
-kind: Pod
-spec:
-  securityContext:
-    runAsUser: 0
-  containers:
-  - name: kaniko
-    image: gcr.io/kaniko-project/executor:v1.23.2-debug
-    command: ['cat']
-    tty: true
-"""
-                }
-            }
-            steps {
-                container('kaniko') {
-                    unstash 'build-context'
+                container('oc') {
                     sh """
                         set -e
-                        mkdir -p /kaniko/.docker
-                        TOKEN=\$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
-                        AUTH=\$(echo -n "unused:\$TOKEN" | base64 -w 0)
-                        echo "{\\"auths\\":{\\"${env.REGISTRY}\\":{\\"auth\\":\\"\$AUTH\\"}}}" > /kaniko/.docker/config.json
+                        oc project ${env.NAMESPACE}
+                        oc apply -f k8s/buildconfig.yaml
 
-                        # Keepalive para evitar travamento do durable-task (JENKINS-48300)
-                        ( while true; do echo "[keepalive]"; sleep 10; done ) &
-                        KA_PID=\$!
+                        # Binary build: envia o diretório do workspace como contexto do Dockerfile
+                        oc start-build ${env.APP_NAME} --from-dir=. --follow --wait
 
-                        /kaniko/executor \\
-                          --context=\$(pwd) \\
-                          --dockerfile=Dockerfile \\
-                          --destination=${env.IMAGE_TAG} \\
-                          --destination=${env.REGISTRY}/${env.NAMESPACE}/${env.APP_NAME}:latest \\
-                          --insecure \\
-                          --skip-tls-verify \\
-                          --ignore-path=/usr/bin/newuidmap \\
-                          --ignore-path=/usr/bin/newgidmap
-                        KANIKO_RC=\$?
-
-                        kill \$KA_PID >/dev/null 2>&1 || true
-                        wait \$KA_PID >/dev/null 2>&1 || true
-
-                        exit \$KANIKO_RC
+                        # Cria/atualiza uma tag numerada igual ao BUILD_NUMBER (além de latest)
+                        oc tag ${env.APP_NAME}:latest ${env.APP_NAME}:${env.BUILD_NUMBER}
                     """
                 }
             }
@@ -97,11 +51,17 @@ spec:
 
         stage('Deploy to OpenShift') {
             steps {
-                sh """
-                    oc set image deployment/retail-analytics retail-analytics=${env.IMAGE_TAG} -n ${env.NAMESPACE} --record 2>/dev/null || true
-                    oc apply -f k8s/deployment.yaml
-                    oc apply -f k8s/service.yaml
-                """
+                container('oc') {
+                    sh """
+                        set -e
+                        oc project ${env.NAMESPACE}
+                        oc apply -f k8s/deployment.yaml
+                        oc apply -f k8s/service.yaml
+
+                        # Garante rollout (mesmo usando :latest no YAML)
+                        oc rollout restart deployment/${env.APP_NAME} || true
+                    """
+                }
             }
         }
     }
