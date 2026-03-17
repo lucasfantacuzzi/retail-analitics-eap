@@ -65,10 +65,16 @@ spec:
                 container('kaniko') {
                     unstash 'build-context'
                     sh """
+                        set -e
                         mkdir -p /kaniko/.docker
                         TOKEN=\$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
                         AUTH=\$(echo -n "unused:\$TOKEN" | base64 -w 0)
                         echo "{\\"auths\\":{\\"${env.REGISTRY}\\":{\\"auth\\":\\"\$AUTH\\"}}}" > /kaniko/.docker/config.json
+
+                        # Keepalive para evitar travamento do durable-task (JENKINS-48300)
+                        ( while true; do echo "[keepalive]"; sleep 10; done ) &
+                        KA_PID=\$!
+
                         /kaniko/executor \\
                           --context=\$(pwd) \\
                           --dockerfile=Dockerfile \\
@@ -77,7 +83,13 @@ spec:
                           --insecure \\
                           --skip-tls-verify \\
                           --ignore-path=/usr/bin/newuidmap \\
-                          --ignore-path=/usr/bin/newgidmap || true
+                          --ignore-path=/usr/bin/newgidmap
+                        KANIKO_RC=\$?
+
+                        kill \$KA_PID >/dev/null 2>&1 || true
+                        wait \$KA_PID >/dev/null 2>&1 || true
+
+                        exit \$KANIKO_RC
                     """
                 }
             }
