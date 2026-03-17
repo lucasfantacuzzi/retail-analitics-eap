@@ -40,12 +40,66 @@ spec:
         REGISTRY     = "image-registry.openshift-image-registry.svc.cluster.local:5000"
         NAMESPACE    = "application"
         VERSION_TAG  = "${env.BUILD_NUMBER}"
+        SONAR_PROJECT_KEY = "retail-analytics"
+        SONAR_HOST_URL    = "http://sonarqube.jenkins.svc.cluster.local:9000"
     }
 
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
+            }
+        }
+
+        stage('Static Analysis (SonarQube)') {
+            agent {
+                kubernetes {
+                    defaultContainer 'maven'
+                    workspaceVolume emptyDirWorkspaceVolume()
+                    yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  securityContext:
+    runAsUser: 0
+  containers:
+  - name: maven
+    image: maven:3.9-eclipse-temurin-17
+    command: ['cat']
+    tty: true
+    resources:
+      requests:
+        cpu: "200m"
+        memory: "512Mi"
+      limits:
+        cpu: "500m"
+        memory: "1Gi"
+  - name: jnlp
+    image: jenkins/inbound-agent:3355.v388858a_47b_33-3-jdk21
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        cpu: "250m"
+        memory: "512Mi"
+"""
+                }
+            }
+            steps {
+                checkout scm
+                container('maven') {
+                    withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
+                        sh """
+                            set -e
+                            mvn -q -e clean verify sonar:sonar \\
+                              -Dsonar.host.url=${env.SONAR_HOST_URL} \\
+                              -Dsonar.token=$SONAR_TOKEN \\
+                              -Dsonar.projectKey=${env.SONAR_PROJECT_KEY} \\
+                              -Dsonar.projectName=${env.SONAR_PROJECT_KEY}
+                        """
+                    }
+                }
             }
         }
 
