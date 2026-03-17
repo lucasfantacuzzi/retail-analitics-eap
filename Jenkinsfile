@@ -18,6 +18,8 @@ pipeline {
         stage('Build WAR with Maven') {
             agent {
                 kubernetes {
+                    defaultContainer 'maven'
+                    workspaceVolume emptyDirWorkspaceVolume()
                     yaml """
 apiVersion: v1
 kind: Pod
@@ -40,6 +42,8 @@ spec:
         stage('Build and Push Image') {
             agent {
                 kubernetes {
+                    defaultContainer 'podman'
+                    workspaceVolume emptyDirWorkspaceVolume()
                     yaml """
 apiVersion: v1
 kind: Pod
