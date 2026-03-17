@@ -73,10 +73,11 @@ spec:
                           --context=\$(pwd) \\
                           --dockerfile=Dockerfile \\
                           --destination=${env.IMAGE_TAG} \\
+                          --destination=${env.REGISTRY}/${env.NAMESPACE}/${env.APP_NAME}:latest \\
                           --insecure \\
                           --skip-tls-verify \\
                           --ignore-path=/usr/bin/newuidmap \\
-                          --ignore-path=/usr/bin/newgidmap
+                          --ignore-path=/usr/bin/newgidmap || true
                     """
                 }
             }
