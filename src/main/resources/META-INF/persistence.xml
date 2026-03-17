@@ -6,7 +6,8 @@
         <jta-data-source>java:jboss/datasources/RetailDS</jta-data-source>
         <class>com.example.retail.domain.SaleRecord</class>
         <properties>
-            <property name="jakarta.persistence.schema-generation.database.action" value="create"/>
+            <!-- Em dev/lab, "update" evita erro quando a tabela já existe -->
+            <property name="jakarta.persistence.schema-generation.database.action" value="update"/>
             <property name="jakarta.persistence.schema-generation.create-source" value="metadata"/>
         </properties>
     </persistence-unit>
