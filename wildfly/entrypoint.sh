@@ -27,11 +27,13 @@ for i in $(seq 1 60); do
   sleep 2
 done
 
-# Add PostgreSQL driver and datasource via CLI (idempotent)
+# Add PostgreSQL driver and datasource via CLI (idempotent, but falha se algo der errado)
+echo "Configuring PostgreSQL datasource RetailDS..."
 "$JBOSS_HOME/bin/jboss-cli.sh" -c "
+if (outcome != success) of /subsystem=datasources/jdbc-driver=postgresql:read-resource
   /subsystem=datasources/jdbc-driver=postgresql:add(driver-name=postgresql,driver-module-name=org.postgresql,driver-class-name=org.postgresql.Driver)
-" 2>/dev/null || true
-"$JBOSS_HOME/bin/jboss-cli.sh" -c "
+end-if
+if (outcome != success) of /subsystem=datasources/data-source=RetailDS:read-resource
   data-source add --name=RetailDS \
     --jndi-name=java:jboss/datasources/RetailDS \
     --driver-name=postgresql \
@@ -39,7 +41,12 @@ done
     --user-name=${DB_USER} \
     --password=${DB_PASSWORD} \
     --enabled=true
-" 2>/dev/null || true
+end-if
+" || {
+  echo "Failed to configure RetailDS datasource via CLI"
+  kill $PID
+  exit 1
+}
 
 # Wait for the server process (keep container running)
 wait $PID
