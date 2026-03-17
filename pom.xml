@@ -29,6 +29,13 @@
             <version>3.1.0</version>
             <scope>provided</scope>
         </dependency>
+        <!-- JTA / Transaction (provided by EAP, needed for @Transactional at compile time) -->
+        <dependency>
+            <groupId>jakarta.transaction</groupId>
+            <artifactId>jakarta.transaction-api</artifactId>
+            <version>2.0.1</version>
+            <scope>provided</scope>
+        </dependency>
         <!-- PostgreSQL driver -->
         <dependency>
             <groupId>org.postgresql</groupId>
