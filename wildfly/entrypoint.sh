@@ -1,5 +1,5 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
 JBOSS_HOME=${JBOSS_HOME:-/opt/jboss/wildfly}
 DB_HOST=${POSTGRES_SERVICE_HOST:-postgres}
@@ -15,38 +15,25 @@ fi
 
 CONNECTION_URL="jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}"
 
-# Start WildFly in background so we can add the datasource via CLI
-"$JBOSS_HOME/bin/standalone.sh" -b 0.0.0.0 -bmanagement 0.0.0.0 "$@" &
-PID=$!
+echo "Configuring PostgreSQL datasource RetailDS (offline)..."
 
-# Wait for management interface
-for i in $(seq 1 60); do
-  if "$JBOSS_HOME/bin/jboss-cli.sh" -c ":read-attribute(name=server-state)" 2>/dev/null | grep -q "running"; then
-    break
-  fi
-  sleep 2
-done
+CLI_FILE="$(mktemp)"
+cat > "${CLI_FILE}" <<EOF
+embed-server --std-out=echo --server-config=standalone.xml
 
-# Add PostgreSQL driver and datasource via CLI (idempotent, but falha se algo der errado)
-echo "Configuring PostgreSQL datasource RetailDS..."
-"$JBOSS_HOME/bin/jboss-cli.sh" -c "
 if (outcome != success) of /subsystem=datasources/jdbc-driver=postgresql:read-resource
   /subsystem=datasources/jdbc-driver=postgresql:add(driver-name=postgresql,driver-module-name=org.postgresql,driver-class-name=org.postgresql.Driver)
 end-if
-if (outcome != success) of /subsystem=datasources/data-source=RetailDS:read-resource
-  data-source add --name=RetailDS \
-    --jndi-name=java:jboss/datasources/RetailDS \
-    --driver-name=postgresql \
-    --connection-url=${CONNECTION_URL} \
-    --user-name=${DB_USER} \
-    --password=${DB_PASSWORD} \
-    --enabled=true
-end-if
-" || {
-  echo "Failed to configure RetailDS datasource via CLI"
-  kill $PID
-  exit 1
-}
 
-# Wait for the server process (keep container running)
-wait $PID
+if (outcome != success) of /subsystem=datasources/data-source=RetailDS:read-resource
+  data-source add --name=RetailDS --jndi-name=java:jboss/datasources/RetailDS --driver-name=postgresql --connection-url=${CONNECTION_URL} --user-name=${DB_USER} --password=${DB_PASSWORD} --enabled=true
+end-if
+
+stop-embedded-server
+EOF
+
+"$JBOSS_HOME/bin/jboss-cli.sh" --file="${CLI_FILE}"
+rm -f "${CLI_FILE}"
+
+echo "Starting WildFly..."
+exec "$JBOSS_HOME/bin/standalone.sh" -b 0.0.0.0 -bmanagement 0.0.0.0 "$@"

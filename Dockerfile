@@ -27,4 +27,4 @@ COPY wildfly/entrypoint.sh /entrypoint.sh
 
 EXPOSE 8080 9990
 
-ENTRYPOINT ["sh", "/entrypoint.sh"]
+ENTRYPOINT ["bash", "/entrypoint.sh"]
