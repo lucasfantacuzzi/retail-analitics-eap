@@ -1,0 +1,15 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: jenkins
+  namespace: jenkins
+  labels:
+    app: jenkins
+spec:
+  to:
+    kind: Service
+    name: jenkins
+  port:
+    targetPort: http
+  tls:
+    termination: edge

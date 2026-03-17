@@ -1,0 +1,281 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "Prometheus",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "8.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus",
+      "version": "1.0.0"
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "JVM Uptime (seconds)",
+      "datasource": "${DS_PROMETHEUS}",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "max(base_jvm_uptime_seconds{namespace=\"$namespace\",service=\"$service\"})",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "colorMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Heap Used",
+      "datasource": "${DS_PROMETHEUS}",
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
+      "targets": [
+        {
+          "expr": "max(base_memory_usedHeap_bytes{namespace=\"$namespace\",service=\"$service\"})",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "colorMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "decimals": 1
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "stat",
+      "title": "CPU Load (process)",
+      "datasource": "${DS_PROMETHEUS}",
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "max(base_cpu_processCpuLoad{namespace=\"$namespace\",service=\"$service\"})",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "colorMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 2
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Threads",
+      "datasource": "${DS_PROMETHEUS}",
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 0 },
+      "targets": [
+        {
+          "expr": "max(base_thread_count{namespace=\"$namespace\",service=\"$service\"})",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "colorMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": { "decimals": 0 },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "JVM Heap Used (bytes)",
+      "datasource": "${DS_PROMETHEUS}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "targets": [
+        {
+          "expr": "base_memory_usedHeap_bytes{namespace=\"$namespace\",service=\"$service\"}",
+          "legendFormat": "{{pod}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "bytes" },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "right" } }
+    },
+    {
+      "type": "timeseries",
+      "title": "CPU Time rate (seconds/sec)",
+      "datasource": "${DS_PROMETHEUS}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "targets": [
+        {
+          "expr": "rate(base_cpu_processCpuTime_seconds{namespace=\"$namespace\",service=\"$service\"}[5m])",
+          "legendFormat": "{{pod}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s" },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "right" } }
+    },
+    {
+      "type": "timeseries",
+      "title": "Active Requests",
+      "datasource": "${DS_PROMETHEUS}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "targets": [
+        {
+          "expr": "wildfly_request_controller_active_requests{namespace=\"$namespace\",service=\"$service\"}",
+          "legendFormat": "{{pod}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "decimals": 0 },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "right" } }
+    },
+    {
+      "type": "timeseries",
+      "title": "Datasource (RetailDS) in-use connections",
+      "datasource": "${DS_PROMETHEUS}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "targets": [
+        {
+          "expr": "wildfly_datasources_pool_in_use_count{namespace=\"$namespace\",service=\"$service\",data_source=\"RetailDS\"}",
+          "legendFormat": "{{pod}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "decimals": 0 },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "right" } }
+    },
+    {
+      "type": "timeseries",
+      "title": "Kubernetes: pod CPU (cores) [container]",
+      "datasource": "${DS_PROMETHEUS}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 22 },
+      "targets": [
+        {
+          "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"$namespace\",pod=~\"retail-analytics-.*\",container=\"retail-analytics\"}[5m]))",
+          "legendFormat": "{{pod}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "cores" },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "right" } }
+    },
+    {
+      "type": "timeseries",
+      "title": "Kubernetes: pod memory working set (bytes) [container]",
+      "datasource": "${DS_PROMETHEUS}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 22 },
+      "targets": [
+        {
+          "expr": "sum by (pod) (container_memory_working_set_bytes{namespace=\"$namespace\",pod=~\"retail-analytics-.*\",container=\"retail-analytics\"})",
+          "legendFormat": "{{pod}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "bytes" },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "right" } }
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["retail-analytics", "openshift", "wildfly"],
+  "templating": {
+    "list": [
+      {
+        "name": "namespace",
+        "type": "query",
+        "datasource": "${DS_PROMETHEUS}",
+        "query": "label_values(base_jvm_uptime_seconds, namespace)",
+        "refresh": 1,
+        "hide": 0,
+        "current": { "text": "application", "value": "application" }
+      },
+      {
+        "name": "service",
+        "type": "query",
+        "datasource": "${DS_PROMETHEUS}",
+        "query": "label_values(base_jvm_uptime_seconds{namespace=\"$namespace\"}, service)",
+        "refresh": 1,
+        "hide": 0,
+        "current": { "text": "retail-analytics", "value": "retail-analytics" }
+      }
+    ]
+  },
+  "time": { "from": "now-30m", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Retail Analytics - Application (WildFly + Postgres)",
+  "uid": "retail-analytics-app",
+  "version": 1,
+  "weekStart": ""
+}

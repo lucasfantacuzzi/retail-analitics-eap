@@ -1,0 +1,15 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: retail-analytics-metrics
+  namespace: application
+  labels:
+    app: retail-analytics
+spec:
+  to:
+    kind: Service
+    name: retail-analytics
+  port:
+    targetPort: metrics
+  tls:
+    termination: edge

@@ -1,0 +1,6 @@
+max(base_memory_usedHeap_bytes{namespace="application",service="retail-analytics"})
+
+100 * max(base_memory_usedHeap_bytes{namespace="application",service="retail-analytics"})
+  / max(base_memory_maxHeap_bytes{namespace="application",service="retail-analytics"})
+
+sum(wildfly_request_controller_active_requests{namespace="application",service="retail-analytics"})
