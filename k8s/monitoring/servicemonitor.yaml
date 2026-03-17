@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: retail-analytics
+  namespace: application
+  labels:
+    app: retail-analytics
+spec:
+  selector:
+    matchLabels:
+      app: retail-analytics
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
