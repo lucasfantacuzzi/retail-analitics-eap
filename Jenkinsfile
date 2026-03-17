@@ -60,6 +60,9 @@ spec:
                         oc apply -f k8s/deployment.yaml
                         oc apply -f k8s/service.yaml
 
+                        # Congela em 1 réplica (evita briga com HPA durante deploy)
+                        oc scale deployment/${env.APP_NAME} -n ${env.NAMESPACE} --replicas=1
+
                         # Faz deploy de uma versão específica (tag numerada), sem depender de :latest
                         oc set image deployment/${env.APP_NAME} ${env.APP_NAME}=${env.REGISTRY}/${env.NAMESPACE}/${env.APP_NAME}:${env.VERSION_TAG} -n ${env.NAMESPACE} --record
                         oc rollout status deployment/${env.APP_NAME} -n ${env.NAMESPACE} --timeout=180s
