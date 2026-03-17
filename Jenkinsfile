@@ -37,6 +37,7 @@ spec:
             steps {
                 container('maven') {
                     sh 'mvn -q -e clean package'
+                    stash name: 'build-context', includes: 'Dockerfile,pom.xml,wildfly/**,src/**'
                 }
             }
         }
@@ -44,7 +45,7 @@ spec:
         stage('Build and Push Image') {
             agent {
                 kubernetes {
-                    defaultContainer 'podman'
+                    defaultContainer 'kaniko'
                     workspaceVolume emptyDirWorkspaceVolume()
                     yaml """
 apiVersion: v1
@@ -53,21 +54,22 @@ spec:
   securityContext:
     runAsUser: 0
   containers:
-  - name: podman
-    image: quay.io/buildah/podman:latest
+  - name: kaniko
+    image: gcr.io/kaniko-project/executor:v1.23.2-debug
     command: ['cat']
     tty: true
-    securityContext:
-      privileged: true
 """
                 }
             }
             steps {
-                container('podman') {
+                container('kaniko') {
+                    unstash 'build-context'
                     sh """
-                        cat /var/run/secrets/kubernetes.io/serviceaccount/token | podman login -u unused -p stdin \$REGISTRY --tls-verify=false
-                        podman build -t ${env.IMAGE_TAG} .
-                        podman push ${env.IMAGE_TAG}
+                        mkdir -p /kaniko/.docker
+                        TOKEN=\$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+                        AUTH=\$(echo -n "unused:\$TOKEN" | base64 -w 0)
+                        echo "{\\"auths\\":{\\"${env.REGISTRY}\\":{\\"auth\\":\\"\$AUTH\\"}}}" > /kaniko/.docker/config.json
+                        /kaniko/executor --context=\$(pwd) --dockerfile=Dockerfile --destination=${env.IMAGE_TAG} --insecure --skip-tls-verify
                     """
                 }
             }
