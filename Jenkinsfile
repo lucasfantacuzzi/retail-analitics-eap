@@ -69,7 +69,14 @@ spec:
                         TOKEN=\$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
                         AUTH=\$(echo -n "unused:\$TOKEN" | base64 -w 0)
                         echo "{\\"auths\\":{\\"${env.REGISTRY}\\":{\\"auth\\":\\"\$AUTH\\"}}}" > /kaniko/.docker/config.json
-                        /kaniko/executor --context=\$(pwd) --dockerfile=Dockerfile --destination=${env.IMAGE_TAG} --insecure --skip-tls-verify
+                        /kaniko/executor \\
+                          --context=\$(pwd) \\
+                          --dockerfile=Dockerfile \\
+                          --destination=${env.IMAGE_TAG} \\
+                          --insecure \\
+                          --skip-tls-verify \\
+                          --ignore-path=/usr/bin/newuidmap \\
+                          --ignore-path=/usr/bin/newgidmap
                     """
                 }
             }
