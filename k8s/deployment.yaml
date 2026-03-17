@@ -21,6 +21,13 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1024Mi"
           env:
             - name: POSTGRES_SERVICE_HOST
               value: "postgres"
