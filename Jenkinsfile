@@ -21,7 +21,9 @@ spec:
 
     environment {
         APP_NAME     = "retail-analytics"
+        REGISTRY     = "image-registry.openshift-image-registry.svc.cluster.local:5000"
         NAMESPACE    = "application"
+        VERSION_TAG  = "${env.BUILD_NUMBER}"
     }
 
     stages {
@@ -43,7 +45,7 @@ spec:
                         oc start-build ${env.APP_NAME} --from-dir=. --follow --wait
 
                         # Cria/atualiza uma tag numerada igual ao BUILD_NUMBER (além de latest)
-                        oc tag ${env.APP_NAME}:latest ${env.APP_NAME}:${env.BUILD_NUMBER}
+                        oc tag ${env.APP_NAME}:latest ${env.APP_NAME}:${env.VERSION_TAG}
                     """
                 }
             }
@@ -58,8 +60,9 @@ spec:
                         oc apply -f k8s/deployment.yaml
                         oc apply -f k8s/service.yaml
 
-                        # Garante rollout (mesmo usando :latest no YAML)
-                        oc rollout restart deployment/${env.APP_NAME} || true
+                        # Faz deploy de uma versão específica (tag numerada), sem depender de :latest
+                        oc set image deployment/${env.APP_NAME} ${env.APP_NAME}=${env.REGISTRY}/${env.NAMESPACE}/${env.APP_NAME}:${env.VERSION_TAG} -n ${env.NAMESPACE} --record || true
+                        oc rollout status deployment/${env.APP_NAME} -n ${env.NAMESPACE} --timeout=120s || true
                     """
                 }
             }
