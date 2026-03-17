@@ -10,7 +10,8 @@ COPY src ./src
 RUN mvn -q -e -DskipTests clean package
 
 ## Stage 2: run on WildFly with PostgreSQL driver and config
-FROM jboss/wildfly:30.0.0.Final
+# jboss/wildfly on Docker Hub stops at 25; use Quay.io for WildFly 26+ (Jakarta EE)
+FROM quay.io/wildfly/wildfly:39.0.0.Final-jdk21
 
 ENV JBOSS_HOME=/opt/jboss/wildfly
 
