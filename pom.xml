@@ -67,6 +67,13 @@
             <version>5.8.0</version>
             <scope>test</scope>
         </dependency>
+        <!-- JAX-RS implementation for unit tests (RuntimeDelegate) -->
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-server</artifactId>
+            <version>3.1.2</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
         <finalName>retail-analytics</finalName>
