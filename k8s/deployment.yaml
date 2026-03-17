@@ -6,7 +6,8 @@ metadata:
   labels:
     app: retail-analytics
 spec:
-  replicas: 1
+  replicas: 2
+  revisionHistoryLimit: 2
   selector:
     matchLabels:
       app: retail-analytics
