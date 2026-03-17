@@ -21,12 +21,12 @@ CLI_FILE="$(mktemp)"
 cat > "${CLI_FILE}" <<EOF
 embed-server --std-out=echo --server-config=standalone.xml
 
-if (outcome != success) of /subsystem=micrometer:read-resource
-  /subsystem=micrometer:add
+if (outcome != success) of /extension=org.wildfly.extension.metrics:read-resource
+  /extension=org.wildfly.extension.metrics:add
 end-if
 
-if (outcome != success) of /subsystem=micrometer/registry=prometheus:read-resource
-  /subsystem=micrometer/registry=prometheus:add(context="/metrics",security-enabled=false)
+if (outcome != success) of /subsystem=metrics:read-resource
+  /subsystem=metrics:add(security-enabled=false)
 end-if
 
 if (outcome != success) of /subsystem=datasources/jdbc-driver=postgresql:read-resource
