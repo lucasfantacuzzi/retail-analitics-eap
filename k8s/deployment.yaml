@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: retail-analytics
+  namespace: application
   labels:
     app: retail-analytics
 spec:
@@ -16,20 +17,39 @@ spec:
     spec:
       containers:
         - name: retail-analytics
-          # Registry interno do OpenShift (ajuste o namespace se não for jenkins)
-          image: image-registry.openshift-image-registry.svc.cluster.local:5000/jenkins/retail-analytics:latest
+          image: image-registry.openshift-image-registry.svc.cluster.local:5000/application/retail-analytics:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
+          env:
+            - name: POSTGRES_SERVICE_HOST
+              value: "postgres"
+            - name: POSTGRES_SERVICE_PORT
+              value: "5432"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: postgres
+                  key: POSTGRES_DB
           readinessProbe:
             httpGet:
               path: /retail-analytics/api/sales/health
               port: 8080
-            initialDelaySeconds: 20
+            initialDelaySeconds: 90
             periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /retail-analytics/api/sales/health
               port: 8080
-            initialDelaySeconds: 60
+            initialDelaySeconds: 120
             periodSeconds: 30

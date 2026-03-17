@@ -1,0 +1,16 @@
+# Service apenas interno: acessível só de dentro do cluster (sem NodePort/LoadBalancer).
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: application
+  labels:
+    app: postgres
+spec:
+  type: ClusterIP  # só dentro do cluster; não expõe para fora
+  selector:
+    app: postgres
+  ports:
+    - name: tcp
+      port: 5432
+      targetPort: 5432

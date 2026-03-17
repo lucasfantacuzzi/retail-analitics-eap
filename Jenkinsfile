@@ -3,10 +3,8 @@ pipeline {
 
     environment {
         APP_NAME     = "retail-analytics"
-        // Registry interno do OpenShift (Jenkins roda dentro do cluster)
         REGISTRY     = "image-registry.openshift-image-registry.svc.cluster.local:5000"
-        // Namespace onde o Jenkins está (e onde a imagem será publicada)
-        NAMESPACE    = "jenkins"
+        NAMESPACE    = "application"
         IMAGE_TAG    = "${REGISTRY}/${NAMESPACE}/${APP_NAME}:${env.BUILD_NUMBER ?: 'latest'}"
     }
 
@@ -59,10 +57,7 @@ spec:
             steps {
                 container('podman') {
                     sh """
-                        REGISTRY='image-registry.openshift-image-registry.svc.cluster.local:5000'
-                        # Login no registry interno com o token do Service Account (montado no pod)
                         cat /var/run/secrets/kubernetes.io/serviceaccount/token | podman login -u unused -p stdin \$REGISTRY --tls-verify=false
-
                         podman build -t ${env.IMAGE_TAG} .
                         podman push ${env.IMAGE_TAG}
                     """
@@ -72,14 +67,11 @@ spec:
 
         stage('Deploy to OpenShift') {
             steps {
-                script {
-                    def imageRef = env.IMAGE_TAG
-                    sh """
-                        oc set image deployment/retail-analytics retail-analytics=${imageRef} -n ${env.NAMESPACE} --record 2>/dev/null || \
-                        oc apply -f k8s/deployment.yaml -n ${env.NAMESPACE}
-                        oc apply -f k8s/service.yaml -n ${env.NAMESPACE}
-                    """
-                }
+                sh """
+                    oc set image deployment/retail-analytics retail-analytics=${env.IMAGE_TAG} -n ${env.NAMESPACE} --record 2>/dev/null || true
+                    oc apply -f k8s/deployment.yaml
+                    oc apply -f k8s/service.yaml
+                """
             }
         }
     }

@@ -9,14 +9,22 @@ RUN mvn -q -e -DskipTests dependency:go-offline
 COPY src ./src
 RUN mvn -q -e -DskipTests clean package
 
-## Stage 2: run on WildFly (EAP-like) application server
+## Stage 2: run on WildFly with PostgreSQL driver and config
 FROM jboss/wildfly:30.0.0.Final
 
 ENV JBOSS_HOME=/opt/jboss/wildfly
 
+# PostgreSQL driver module
+RUN curl -sL -o /tmp/postgresql.jar https://jdbc.postgresql.org/download/postgresql-42.7.3.jar
+RUN mkdir -p ${JBOSS_HOME}/modules/system/layers/base/org/postgresql/main
+COPY wildfly/module.xml ${JBOSS_HOME}/modules/system/layers/base/org/postgresql/main/
+RUN mv /tmp/postgresql.jar ${JBOSS_HOME}/modules/system/layers/base/org/postgresql/main/postgresql-42.7.3.jar
+
 COPY --from=build /build/target/retail-analytics.war ${JBOSS_HOME}/standalone/deployments/retail-analytics.war
 
-EXPOSE 8080
+COPY wildfly/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-CMD ["/opt/jboss/wildfly/bin/standalone.sh", "-b", "0.0.0.0"]
+EXPOSE 8080 9990
 
+ENTRYPOINT ["/entrypoint.sh"]
