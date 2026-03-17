@@ -24,6 +24,8 @@ pipeline {
 apiVersion: v1
 kind: Pod
 spec:
+  securityContext:
+    runAsUser: 0
   containers:
   - name: maven
     image: maven:3.9-eclipse-temurin-11
@@ -48,6 +50,8 @@ spec:
 apiVersion: v1
 kind: Pod
 spec:
+  securityContext:
+    runAsUser: 0
   containers:
   - name: podman
     image: quay.io/buildah/podman:latest
